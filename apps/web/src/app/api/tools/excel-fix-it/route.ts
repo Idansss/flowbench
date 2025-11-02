@@ -175,7 +175,75 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 6: Deduplicate rows
+    // Step 6: Split column by delimiter
+    if (config.splitColumn) {
+      const splitStep = await JobService.measureStep("Split Column", async () => {
+        const { column, delimiter } = config.splitColumn;
+        let splitCount = 0;
+
+        processedRows = processedRows.map((row) => {
+          const result = { ...row };
+          
+          if (row[column] && typeof row[column] === "string") {
+            const parts = row[column].split(delimiter).map((p: string) => p.trim());
+            
+            // Create new columns for each part
+            parts.forEach((part: string, i: number) => {
+              result[`${column}_${i + 1}`] = part;
+            });
+            
+            splitCount++;
+          }
+          
+          return result;
+        });
+
+        return splitCount;
+      });
+
+      auditSteps.push({
+        stepNumber: ++stepNumber,
+        stepName: "Split Column",
+        description: `Split ${config.splitColumn.column} by '${config.splitColumn.delimiter}'`,
+        counts: { rows_affected: splitStep.result },
+        durationMs: splitStep.durationMs,
+      });
+    }
+
+    // Step 7: Merge columns with template
+    if (config.mergeColumns) {
+      const mergeStep = await JobService.measureStep("Merge Columns", async () => {
+        const { columns, template, targetColumn } = config.mergeColumns;
+        let mergedCount = 0;
+
+        processedRows = processedRows.map((row) => {
+          const result = { ...row };
+          
+          // Replace {column} in template with actual values
+          let merged = template;
+          columns.forEach((col: string) => {
+            merged = merged.replace(new RegExp(`\\{${col}\\}`, "g"), row[col] || "");
+          });
+          
+          result[targetColumn || "merged"] = merged;
+          mergedCount++;
+          
+          return result;
+        });
+
+        return mergedCount;
+      });
+
+      auditSteps.push({
+        stepNumber: ++stepNumber,
+        stepName: "Merge Columns",
+        description: `Merged ${config.mergeColumns.columns.length} columns`,
+        counts: { rows_affected: mergeStep.result },
+        durationMs: mergeStep.durationMs,
+      });
+    }
+
+    // Step 8: Deduplicate rows
     if (config.dedupeRows) {
       const dedupeStep = await JobService.measureStep("Deduplicate", async () => {
         const initialCount = processedRows.length;
@@ -199,9 +267,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 7: Generate output
+    // Step 9: Generate output
     const outputStep = await JobService.measureStep("Generate Output", async () => {
-      return generateCSV(processedRows, csvData.headers);
+      // Get final headers (may have new columns from split/merge)
+      const finalHeaders = processedRows.length > 0 ? Object.keys(processedRows[0]) : csvData.headers;
+      return generateCSV(processedRows, finalHeaders);
     });
 
     const outputCSV = outputStep.result;

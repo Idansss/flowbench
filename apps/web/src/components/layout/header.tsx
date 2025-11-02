@@ -33,6 +33,12 @@ export function Header() {
               Docs
             </Link>
             <Link
+              href="/settings"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Settings
+            </Link>
+            <Link
               href="/privacy"
               className="text-sm font-medium hover:text-primary transition-colors"
             >

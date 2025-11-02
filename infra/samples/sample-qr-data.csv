@@ -1,0 +1,7 @@
+name,email,company,ticket_type,event_id
+John Doe,john@example.com,Acme Corp,VIP,EVT-001
+Jane Smith,jane@techco.io,TechCo,Standard,EVT-001
+Bob Johnson,bob@startup.com,Startup Inc,VIP,EVT-001
+Alice Williams,alice@enterprise.com,Enterprise LLC,Standard,EVT-001
+Charlie Brown,charlie@company.com,Company XYZ,VIP,EVT-001
+

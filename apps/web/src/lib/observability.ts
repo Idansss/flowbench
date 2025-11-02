@@ -2,36 +2,61 @@
 
 import { config } from "@/config";
 
+// Dynamic Sentry import (only load if enabled)
+let Sentry: any = null;
+
 // Sentry initialization (server-side)
-export function initSentry() {
+export async function initSentry() {
   if (!config.enableSentry || !config.sentryDSN) {
     return;
   }
 
-  // In production, you would import and initialize Sentry here:
-  // import * as Sentry from "@sentry/nextjs";
-  // Sentry.init({ dsn: config.sentryDSN });
-  
-  console.log("Sentry initialized");
+  try {
+    // Dynamic import to avoid loading if not needed
+    Sentry = await import("@sentry/nextjs");
+    
+    Sentry.init({
+      dsn: config.sentryDSN,
+      tracesSampleRate: 0.1,
+      environment: process.env.NODE_ENV,
+      beforeSend(event: any) {
+        // Redact PII before sending
+        return redactPII(event);
+      },
+    });
+    
+    console.log("✅ Sentry initialized");
+  } catch (error) {
+    console.warn("Sentry initialization failed:", error);
+  }
 }
 
 // PostHog client-side tracking
 export function trackEvent(eventName: string, properties?: Record<string, any>) {
   if (typeof window === "undefined") return;
   if (!config.enablePosthog) return;
+  if (isTelemetryOptedOut()) return;
 
-  // In production, use PostHog SDK:
-  // window.posthog?.capture(eventName, properties);
-  
-  console.log("Event tracked:", eventName, properties);
+  // Check if PostHog is loaded
+  const posthog = (window as any).posthog;
+  if (posthog) {
+    // Redact PII from properties
+    const redactedProps = properties ? redactPII(properties) : undefined;
+    posthog.capture(eventName, redactedProps);
+  } else {
+    console.log("Event tracked (PostHog not loaded):", eventName, properties);
+  }
 }
 
 // Error tracking
 export function captureException(error: Error, context?: Record<string, any>) {
+  // Always log to console
   console.error("Error captured:", error, context);
   
-  if (config.enableSentry) {
-    // In production: Sentry.captureException(error, { extra: context });
+  if (config.enableSentry && Sentry) {
+    // Redact context before sending
+    const redactedContext = context ? redactPII(context) : undefined;
+    Sentry.captureException(error, { extra: redactedContext });
   }
 }
 

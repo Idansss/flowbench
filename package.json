@@ -14,9 +14,12 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:unit": "pnpm --filter @flowbench/lib test",
+    "test:e2e": "pnpm --filter web playwright test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "db:migrate": "pnpm --filter web db:migrate",
-    "db:seed": "pnpm --filter web db:seed"
+    "db:seed": "pnpm --filter web db:seed",
+    "db:test": "pnpm --filter web db:test"
   },
   "devDependencies": {
     "@turbo/gen": "^2.0.0",
