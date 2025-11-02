@@ -1,0 +1,10 @@
+name,email,company,phone,notes
+John Doe,john.doe@example.com,Acme Corp,555-0100,"   Interested in demo   "
+jane smith,JANE.SMITH@EXAMPLE.COM,Tech Inc,555-0101,Follow up next week
+John Doe,john.doe@example.com,Acme Corp,555-0100,Interested in demo
+Bob Johnson,bob@freemail.com,,555-0102,
+Alice Williams,alice.williams@startup.io,Startup IO,555-0103,Hot lead
+,,,,"    "
+CHARLIE BROWN,charlie@enterprise.com,ENTERPRISE LLC,555-0104,Decision maker
+Jane Smith,jane.smith@example.com,Tech Inc,555-0101,Follow up next week
+
