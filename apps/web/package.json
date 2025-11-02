@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node --loader ts-node/esm scripts/migrate.ts",
-    "db:seed": "node --loader ts-node/esm scripts/seed.ts"
+    "db:seed": "node --loader ts-node/esm scripts/seed.ts",
+    "db:test": "node --loader ts-node/esm scripts/test-db.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -46,7 +47,9 @@
     "sharp": "^0.33.5",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
     "uuid": "^10.0.0",
+    "jszip": "^3.10.1",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
