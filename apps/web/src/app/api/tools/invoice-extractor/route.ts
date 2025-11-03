@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { JobService } from "@/lib/job-service";
-import { extractInvoiceData } from "@flowbench/lib";
+import { parsePDF, extractInvoiceData } from "@flowbench/lib";
 import { generateCSV } from "@flowbench/lib";
 
 export const maxDuration = 60;
@@ -57,9 +57,24 @@ export async function POST(request: NextRequest) {
         const file = files[i];
 
         try {
-          // Read file content
-          const buffer = await file.arrayBuffer();
-          const text = new TextDecoder().decode(buffer);
+          let text = "";
+
+          // Parse PDF if it's a PDF file
+          if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+            try {
+              const pdfData = await parsePDF(file);
+              text = pdfData.text;
+            } catch (error) {
+              console.error(`PDF parsing failed for ${file.name}, trying text extraction:`, error);
+              // Fallback to raw text
+              const buffer = await file.arrayBuffer();
+              text = new TextDecoder().decode(buffer);
+            }
+          } else {
+            // For images or other formats, use text decoder
+            const buffer = await file.arrayBuffer();
+            text = new TextDecoder().decode(buffer);
+          }
 
           // Extract using deterministic regex
           const extracted = extractInvoiceData(text);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { JobService } from "@/lib/job-service";
+import { PDFDocument, PDFForm, PDFTextField } from "pdf-lib";
 
 export const maxDuration = 60;
 
@@ -44,56 +45,84 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 2: Extract form fields
-    // Note: Real implementation would use pdf-lib or pdftk
     const fieldsStep = await JobService.measureStep("Extract Fields", async () => {
-      // Placeholder: In production, use pdf-lib to read form fields
-      const mockFields = config.fields || {
-        name: "",
-        email: "",
-        date: "",
-        signature: "",
-      };
-
-      return Object.keys(mockFields);
+      const buffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(buffer);
+      const form = pdfDoc.getForm();
+      
+      const fields = form.getFields();
+      return fields.map((field) => ({
+        name: field.getName(),
+        type: field.constructor.name,
+      }));
     });
 
     const fields = fieldsStep.result;
     auditSteps.push({
       stepNumber: ++stepNumber,
       stepName: "Extract Form Fields",
-      description: `Found ${fields.length} form fields`,
+      description: `Found ${fields.length} form fields in PDF`,
       counts: {
         fields: fields.length,
       },
       durationMs: fieldsStep.durationMs,
     });
 
-    // Step 3: Fill PDF
+    // Step 3: Fill PDF with provided data
     const fillStep = await JobService.measureStep("Fill PDF", async () => {
-      // Placeholder: Real implementation would use pdf-lib
-      // For now, return original PDF buffer
-      return await file.arrayBuffer();
+      const buffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(buffer);
+      const form = pdfDoc.getForm();
+      
+      let filledCount = 0;
+      const fieldData = config.fieldData || {};
+
+      // Fill each field with provided data
+      for (const [fieldName, value] of Object.entries(fieldData)) {
+        try {
+          const field = form.getField(fieldName);
+          
+          if (field instanceof PDFTextField) {
+            field.setText(String(value));
+            filledCount++;
+          }
+          // Support for other field types can be added
+        } catch (error) {
+          console.warn(`Failed to fill field ${fieldName}:`, error);
+        }
+      }
+
+      // Flatten the form (make fields non-editable)
+      if (config.flatten !== false) {
+        form.flatten();
+      }
+
+      // Save the filled PDF
+      const pdfBytes = await pdfDoc.save();
+      return { buffer: Buffer.from(pdfBytes), filledCount };
     });
 
-    const filledPdf = Buffer.from(fillStep.result);
+    const { buffer: filledPdf, filledCount } = fillStep.result;
     
     auditSteps.push({
       stepNumber: ++stepNumber,
       stepName: "Fill PDF",
-      description: "Filled form fields and flattened PDF",
+      description: `Filled ${filledCount} form fields${config.flatten !== false ? " and flattened PDF" : ""}`,
       counts: {
-        fields_filled: fields.length,
+        fields_filled: filledCount,
+        total_fields: fields.length,
       },
       durationMs: fillStep.durationMs,
-      warnings: ["PDF filling requires pdf-lib integration - returning template"],
     });
 
     // Complete job
     const { downloadUrl } = await JobService.completeJob(jobId, {
       success: true,
       summary: {
-        fieldsFilled: fields.length,
+        totalFields: fields.length,
+        fieldsFilled: filledCount,
         pdfGenerated: true,
+        flattened: config.flatten !== false,
       },
       outputFiles: [
         {
@@ -110,7 +139,8 @@ export async function POST(request: NextRequest) {
       jobId,
       downloadUrl,
       summary: {
-        fieldsFilled: fields.length,
+        totalFields: fields.length,
+        fieldsFilled: filledCount,
         pdfGenerated: true,
       },
       auditSteps,
