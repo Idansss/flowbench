@@ -27,6 +27,12 @@ export function Header() {
               Tools
             </Link>
             <Link
+              href="/marketplace"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Marketplace
+            </Link>
+            <Link
               href="/ai"
               className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
             >
@@ -34,10 +40,10 @@ export function Header() {
               Idansss AI
             </Link>
             <Link
-              href="/docs"
+              href="/become-seller"
               className="text-sm font-medium hover:text-primary transition-colors"
             >
-              Docs
+              Become a Seller
             </Link>
             <Link
               href="/settings"
@@ -75,6 +81,13 @@ export function Header() {
               Tools
             </Link>
             <Link
+              href="/marketplace"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Marketplace
+            </Link>
+            <Link
               href="/ai"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors flex items-center gap-2"
               onClick={() => setMobileMenuOpen(false)}
@@ -83,11 +96,11 @@ export function Header() {
               Idansss AI
             </Link>
             <Link
-              href="/docs"
+              href="/become-seller"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Docs
+              Become a Seller
             </Link>
             <Link
               href="/settings"
