@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseCSV } from "@flowbench/lib";
 import { JobService } from "@/lib/job-service";
+import { validateToolConfig } from "@/lib/validation";
 import QRCode from "qrcode";
 import { v4 as uuidv4 } from "uuid";
 
@@ -11,7 +12,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
     const configStr = formData.get("config") as string;
-    const config = JSON.parse(configStr || "{}");
+    const rawConfig = JSON.parse(configStr || "{}");
+
+    // SECURITY: Validate configuration
+    const config = validateToolConfig("qr-generator", rawConfig);
 
     if (!files || files.length === 0) {
       return NextResponse.json(

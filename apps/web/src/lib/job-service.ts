@@ -5,6 +5,8 @@
 
 import { db } from "./db";
 import { storage } from "./storage";
+import { validateFiles } from "./upload";
+import { redactPII } from "./observability";
 import { v4 as uuidv4 } from "uuid";
 import JSZip from "jszip";
 
@@ -42,6 +44,17 @@ export class JobService {
   static async createJob(config: JobConfig, inputFiles: File[]): Promise<string> {
     const jobId = uuidv4();
     
+    // SECURITY: Validate files before processing
+    const validation = await validateFiles(inputFiles);
+    if (!validation.valid) {
+      throw new Error(`File validation failed: ${validation.errors.join(", ")}`);
+    }
+
+    // Log warnings if any
+    if (validation.warnings.length > 0) {
+      console.warn("File validation warnings:", validation.warnings);
+    }
+
     // Create job in database
     const job = await db.createJob({
       userId: config.userId,
@@ -93,8 +106,16 @@ export class JobService {
       throw new Error(result.error || "Job failed");
     }
 
-    // Save audit logs
-    for (const step of result.auditSteps) {
+    // SECURITY: Redact PII from audit logs before saving
+    const redactedAuditSteps = result.auditSteps.map((step) => ({
+      ...step,
+      inputSummary: step.inputSummary ? redactPII(step.inputSummary) : undefined,
+      outputSummary: step.outputSummary ? redactPII(step.outputSummary) : undefined,
+      description: typeof step.description === "string" ? redactPII(step.description) : step.description,
+    }));
+
+    // Save audit logs (redacted)
+    for (const step of redactedAuditSteps) {
       await db.createAuditLog({
         jobId,
         ...step,

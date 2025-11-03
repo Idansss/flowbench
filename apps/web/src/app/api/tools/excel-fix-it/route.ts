@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseCSV, generateCSV } from "@flowbench/lib";
 import { JobService } from "@/lib/job-service";
 import { normalizeDate } from "@flowbench/lib";
+import { validateToolConfig } from "@/lib/validation";
 
 export const maxDuration = 60; // 60 seconds for Vercel
 
@@ -10,7 +11,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
     const configStr = formData.get("config") as string;
-    const config = JSON.parse(configStr);
+    const rawConfig = JSON.parse(configStr);
+
+    // SECURITY: Validate configuration with Zod
+    const config = validateToolConfig("excel-fix-it", rawConfig);
 
     if (!files || files.length === 0) {
       return NextResponse.json(

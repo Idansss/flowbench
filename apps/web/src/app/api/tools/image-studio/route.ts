@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { JobService } from "@/lib/job-service";
+import { validateToolConfig } from "@/lib/validation";
 import sharp from "sharp";
 
 export const maxDuration = 60;
@@ -9,7 +10,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
     const configStr = formData.get("config") as string;
-    const config = JSON.parse(configStr || "{}");
+    const rawConfig = JSON.parse(configStr || "{}");
+
+    // SECURITY: Validate configuration
+    const config = validateToolConfig("image-studio", rawConfig);
 
     if (!files || files.length === 0) {
       return NextResponse.json(

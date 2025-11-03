@@ -1,29 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { JobService } from "@/lib/job-service";
-import OpenAI from "openai";
+import { createChatCompletion, SYSTEM_PROMPTS, validateAIConfig, canUseAI } from "@/lib/openai";
 
 export const maxDuration = 60;
 
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-  : null;
-
-// System prompt for content generation (checked into repo as required)
-const SYSTEM_PROMPT = `You are a YouTube Shorts content expert. Generate engaging, viral-worthy content for short-form videos.
-
-Rules:
-- Hooks must be attention-grabbing (5-10 words)
-- Captions should be concise and actionable
-- Tags must be relevant and searchable
-- Thumbnail prompts should be visually striking
-- Keep language conversational and energetic
-- Focus on viewer retention and engagement`;
-
 export async function POST(request: NextRequest) {
   try {
-    if (!openai) {
+    // SECURITY: Check if AI is available
+    if (!canUseAI()) {
       return NextResponse.json(
         { error: "OpenAI API key not configured" },
         { status: 500 }
@@ -34,9 +18,16 @@ export async function POST(request: NextRequest) {
     const url = formData.get("url") as string;
     const transcript = formData.get("transcript") as string;
     const configStr = formData.get("config") as string;
-    const config = JSON.parse(configStr || "{}");
+    const rawConfig = JSON.parse(configStr || "{}");
 
-    if (!url && !transcript) {
+    // SECURITY: Validate configuration with Zod
+    const config = validateAIConfig("youtube-shorts", {
+      ...rawConfig,
+      url,
+      transcript,
+    });
+
+    if (!config.url && !config.transcript) {
       return NextResponse.json(
         { error: "URL or transcript required" },
         { status: 400 }
@@ -81,18 +72,19 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Generate hooks
     const hooksStep = await JobService.measureStep("Generate Hooks", async () => {
-      const completion = await openai!.chat.completions.create({
-        model: "gpt-4",
-        temperature: 0.2,
-        seed: config.seed || 42,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+      // SECURITY: Use secure wrapper with disable-logging header
+      const completion = await createChatCompletion(
+        [
+          { role: "system", content: SYSTEM_PROMPTS.youtubeShorts },
           {
             role: "user",
             content: `Generate 10 attention-grabbing hooks for a YouTube Short based on this content:\n\n${contentText.slice(0, 1000)}\n\nReturn as JSON array of strings.`,
           },
         ],
-      });
+        {
+          seed: config.seed,
+        }
+      );
 
       const hooks = JSON.parse(completion.choices[0].message.content || "[]");
       return hooks.slice(0, 10);
