@@ -10,6 +10,7 @@ import {
   Mail,
   Workflow,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,23 @@ export default function HomePage() {
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="/docs">Documentation</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Idansss AI Feature */}
+      <section className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-8 text-center space-y-4">
+        <div className="inline-flex p-3 bg-primary/20 rounded-full">
+          <Sparkles className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-3xl font-bold">Meet Idansss AI</h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Your intelligent assistant for Flowbench. Get instant tool recommendations,
+          troubleshooting help, and workflow optimization powered by GPT-4 and Gemini.
+        </p>
+        <div className="flex gap-4 justify-center pt-2">
+          <Button asChild size="lg">
+            <Link href="/ai">Try Idansss AI</Link>
           </Button>
         </div>
       </section>

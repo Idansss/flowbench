@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X, FileCode } from "lucide-react";
+import { Menu, X, FileCode, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +27,13 @@ export function Header() {
               Tools
             </Link>
             <Link
+              href="/ai"
+              className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Sparkles className="w-4 h-4" />
+              Idansss AI
+            </Link>
+            <Link
               href="/docs"
               className="text-sm font-medium hover:text-primary transition-colors"
             >
@@ -37,12 +44,6 @@ export function Header() {
               className="text-sm font-medium hover:text-primary transition-colors"
             >
               Settings
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              Privacy
             </Link>
             <Button asChild variant="default" size="sm">
               <Link href="/auth/signin">Sign In</Link>
@@ -74,6 +75,14 @@ export function Header() {
               Tools
             </Link>
             <Link
+              href="/ai"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Sparkles className="w-4 h-4" />
+              Idansss AI
+            </Link>
+            <Link
               href="/docs"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
@@ -81,11 +90,11 @@ export function Header() {
               Docs
             </Link>
             <Link
-              href="/privacy"
+              href="/settings"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Privacy
+              Settings
             </Link>
             <Button asChild className="w-full">
               <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}>
